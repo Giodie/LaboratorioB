@@ -1,0 +1,1 @@
+java -cp "Server.jar;lib/*" server.Server

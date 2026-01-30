@@ -1,0 +1,1 @@
+java -cp "BookRecommender.jar;lib/*" client.BookRecommender
