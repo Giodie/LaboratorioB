@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -32,7 +31,7 @@ public class CsvTable {
     public JButton eliminaSuggerimentoBtn;
     private Proxy proxy;
     /**
-     * Costruttore della classe CsvTable
+     * Costruttore della classe CsvTable, utilizzto per mostrare la tabella contente i libri del file CSV.
      */
     public CsvTable() {
         tableModel = new DefaultTableModel() {
@@ -85,15 +84,9 @@ public class CsvTable {
         table.setRowSorter(sorter);
     }
     /**
-     * Carica i libri dal server
-     * Utilizza l'oggetto Proxy per ottenere l'elenco dei libri
-     * disponibili sul server e aggiunge ciascun libro alla tabella
-     * grafica locale, con le colonne "Titolo", "Autore" e "Anno".
-     *
-     * @param proxy oggetto Proxy utilizzato per comunicare con il server
-     *              e recuperare la lista dei libri.
+     * Metodo per caricare il fileCSV utilizzato per riempire la tabella.
+     * @param filePath il path del file CSV
      */
-
     public void loadCSV(Proxy proxy) {
         this.proxy = proxy;
         String line;
@@ -113,7 +106,7 @@ public class CsvTable {
     }
 
     /**
-     * Metodo per il parsing
+     * Metodo per il parsing del file csv.
      * @param line la linea su cui deve essere effettuato il parsing
      * @return
      */
@@ -240,7 +233,7 @@ public class CsvTable {
     }
 
     /**
-     * Metodo per aggiungere un suggerimento alla lista dei suggerimenti
+     * Metodo per aggiungere un suggerimento alla lista dei suggerimenti per poi essere salvata sul file in locale. 
      * Controlla se il suggerimento è nuovo o una modifica di uno precedente.
      */
     public void aggiungiSuggerimento() {
@@ -330,7 +323,7 @@ public class CsvTable {
     }
 
     /**
-     * Carica la lista dei suggerimenti
+     * Carica la lista dei suggerimenti contenuta su un file locale.
      */
     public void loadSuggerimenti() {
         System.out.println("328");
@@ -339,7 +332,30 @@ public class CsvTable {
             libri = proxy.getSuggerimentiLibro(utente, suggerimento).getALLibri();
         }
     }
+    /**
+     * Metodo utilizzato per sapere il path del file dei libri suggeriti.
+     * @return la stringa del path
+     */
+    private String pathToSuggerimenti(){
+        FileFinder fileFinder = new FileFinder();
+        String str = String.valueOf(fileFinder.suggerimentiPathDati());
+        return str;
+    }
+    /**
+     * Metodo per scrivere la lista di tutti i suggerimenti su un file locale
+     * @param suggerimenti la lista da scrivere
+     */
+    private void  scriviFileSuggerimenti(ArrayList<SuggerimentiLibro> suggerimenti){
+        try {
+            File file = new File(pathToSuggerimenti());
+            FileOutputStream fos=new FileOutputStream(file);
+            ObjectOutputStream oos=new ObjectOutputStream(fos);
+            oos.writeObject(suggerimenti);
+            fos.close();
+            oos.close();
+        } catch (Exception e) {}
 
+    }
     /**
      * Metodo per settare l'utente che sta effettuando un suggerimento
      * @param utente l'utente che effettua il suggerimento

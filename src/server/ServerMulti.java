@@ -1,14 +1,13 @@
-//Giodi Carolo 758379
 package server;
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import java.sql.*;
 import client.Librerie;
 import client.Libro;
 import client.SuggerimentiLibro;
-import client.ValutazioniLibro;
 import client.Utente;
+import client.ValutazioniLibro;
+import java.io.*;
+import java.net.*;
+import java.sql.*;
+import java.util.*;
 public class ServerMulti extends Thread{
     private Socket socket;
     private ObjectInputStream in;
@@ -19,9 +18,9 @@ public class ServerMulti extends Thread{
         this.socket = socket;
         try {
            connection = DriverManager.getConnection(
-   "jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:6543/postgres",
-   "postgres.fmxyyrxfvnmetgtcsgnm",
-   "Laboratoriab"
+   "jdbc:postgresql://aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require",
+    "postgres.wdusmtnrvuiuggnuwaip",
+   "Fortuna.3Labb3"
 );
             this.stmt = connection.createStatement();
             this.out = new ObjectOutputStream(socket.getOutputStream());
@@ -84,7 +83,7 @@ public class ServerMulti extends Thread{
                 }
                 else if(operazione.equals("GetUtenteDaCF")){
                     String codiceFiscale = (String)in.readObject();
-                    String comandoQuery = "SELECT nome, cognome, email, codifiscale, password, username FROM utente WHERE codicefiscale = ?";
+                    String comandoQuery = "SELECT nome, cognome, email, codifiscale, username, password FROM utente WHERE codicefiscale = ?";
                     PreparedStatement ps = connection.prepareStatement(comandoQuery);
                     ps.setString(1,codiceFiscale);
                     ResultSet rs = ps.executeQuery();
@@ -268,7 +267,7 @@ public class ServerMulti extends Thread{
                         out.flush();
                     }
                 }
-                else if(operazione.equals("AggiungiLibreria")){ //DA CAMBIARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                else if(operazione.equals("AggiungiLibreria")){ 
                     Librerie libreria = (Librerie)in.readObject();
                     String nomeLibreria = libreria.getNome();
                     String cf = libreria.getUtente().getCF();
@@ -289,7 +288,7 @@ public class ServerMulti extends Thread{
                         ps.executeUpdate();
                         rs = ps.getGeneratedKeys();
                         rs.next();
-                        int idLibreria = rs.getInt(1);
+                        int idLibreria = rs.getInt(3);
                         ArrayList<Libro> alLibro = libreria.getAlLibri();
                         comandoQuery = "INSERT INTO libro_libreria(library_id,book_id) VALUES (?,?)";
                         ps = connection.prepareStatement(comandoQuery);
@@ -788,64 +787,30 @@ public class ServerMulti extends Thread{
                     }
                     out.writeObject(alUtente);
                     out.flush();
-                } else if (operazione.equals("getMediaValutazione")) {
-                    Libro l = (Libro) in.readObject();
-
-                    // Prendo l'id del libro
-                    String operazioneQuery = "SELECT book_id FROM libro WHERE titolo = ? AND autore = ? AND anno_pubblicazione = ?";
+                }else if(operazione.equals("getMediaValutazione")){
+                    Libro l = (Libro)in.readObject();
+                    String operazioneQuery ="SELECT book_id FROM libro WHERE titolo = ? AND autore = ? AND anno_pubblicazione = ?";
                     PreparedStatement ps = connection.prepareStatement(operazioneQuery);
-                    ps.setString(1, l.getTitolo());
-                    ps.setString(2, l.getAutore());
-                    ps.setInt(3, l.getAnnoPubblicazione());
+                    ps.setString(1,l.getTitolo());
+                    ps.setString(2,l.getAutore());
+                    ps.setInt(3,l.getAnnoPubblicazione());
                     ResultSet rs = ps.executeQuery();
-
-                    int id_libro = 0;
-                    if (rs.next()) {
-                        id_libro = rs.getInt("book_id");
-                    }
-
-                    // Media dei voti principali + calcolo del voto finale lato server
-                    operazioneQuery = "SELECT " +
-                            "COALESCE(avg(stile),0), " +
-                            "COALESCE(avg(contenuto),0), " +
-                            "COALESCE(avg(gradevolezza),0), " +
-                            "COALESCE(avg(originalita),0), " +
-                            "COALESCE(avg(edizione),0) " +
-                            "FROM valutazione WHERE book_id = ?";
-
+                    rs.next();
+                    int id_libro = rs.getInt("book_id");
+                    operazioneQuery = "SELECT avg(stile),avg(contenuto),avg(gradevolezza),avg(originalita),avg(edizione),avg(voto_finale) FROM valutazione WHERE book_id = ?";
                     ps = connection.prepareStatement(operazioneQuery);
-                    ps.setInt(1, id_libro);
+                    ps.setInt(1,id_libro);
                     rs = ps.executeQuery();
-
-                    ArrayList<Double> valutazioni = new ArrayList<>();
-                    if (rs.next()) {
-                        double stile = rs.getDouble(1);
-                        double contenuto = rs.getDouble(2);
-                        double gradevolezza = rs.getDouble(3);
-                        double originalita = rs.getDouble(4);
-                        double edizione = rs.getDouble(5);
-
-                        valutazioni.add(stile);
-                        valutazioni.add(contenuto);
-                        valutazioni.add(gradevolezza);
-                        valutazioni.add(originalita);
-                        valutazioni.add(edizione);
-
-                        double votoFinale = (stile + contenuto + gradevolezza + originalita + edizione) / 5.0;
-                        valutazioni.add(votoFinale);
+                    ArrayList<Integer> valutazioni = new ArrayList<>();
+                    if(rs.next()){
+                        valutazioni.add(rs.getInt(1));
+                        valutazioni.add(rs.getInt(2));
+                        valutazioni.add(rs.getInt(3));
+                        valutazioni.add(rs.getInt(4));
+                        valutazioni.add(rs.getInt(5));
+                        valutazioni.add(rs.getInt(6));
                     }
-
                     out.writeObject(valutazioni);
-                    out.flush();
-                }else if(operazione.equals("getTuttiUtenti")){
-                    String comandoQuery = "SELECT * FROM utente";
-                    PreparedStatement ps = connection.prepareStatement(comandoQuery);
-                    ResultSet rs = ps.executeQuery();
-                    ArrayList<Utente> alUtente = new ArrayList<>();
-                    while(rs.next()){
-                        alUtente.add(new Utente(rs.getString("nome"),rs.getString("cognome"),rs.getString("codicefiscale"),rs.getString("email"),rs.getString("username"),rs.getString("password")));
-                    }
-                    out.writeObject(alUtente);
                     out.flush();
                 }
             }

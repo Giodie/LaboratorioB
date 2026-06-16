@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import javax.swing.*;
 import java.awt.*;
@@ -7,7 +6,6 @@ import com.opencsv.CSVWriter;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import java.io.*;
-import java.util.ArrayList;
 
 public class Register implements ActionListener {
 
@@ -27,13 +25,11 @@ public class Register implements ActionListener {
     private String cognome;
     private Utente utente;
     private Proxy proxy;
-    private ArrayList<Utente> listaUtenti;
     /**
      * Costruttore della classe Register. Inizializza il frame sulla quale è possibile effettuare la registrazione. effettua il controllo di vari campi per confermare che non ci siano errori o duplicati.
      */
     public Register(Proxy proxy) {  
         this.proxy = proxy;
-        listaUtenti = proxy.getTuttiUtenti();
         
         regFrame = new JFrame("Register");
         regFrame.setSize(500, 600);
@@ -198,7 +194,14 @@ public class Register implements ActionListener {
         mainPanel.revalidate();
         mainPanel.repaint();
     }
-
+    /**
+     * Restituisce il file contente tutti gli utenti registrati
+     * @return
+     */
+    public File pathToRegisterFile() {
+        FileFinder fileFinder = new FileFinder();
+        return fileFinder.UtentiRegistrati();
+    }
     /**
      * Controlla se i campi hanno delle stringhe vuote
      * @param nome il campo nome
@@ -231,12 +234,15 @@ public class Register implements ActionListener {
      * @return true se esiste false altirmenti
      */
     private boolean emailEsistente(String email) {
-       for(int i=0;i<listaUtenti.size();i++){
-           if(listaUtenti.get(i).getEmail().equals(email)){
-               return true;
-           }
-       }
-       return false;
+        try (CSVReader reader = new CSVReader(new FileReader(pathToRegisterFile()))) {
+            String[] linea;
+            while ((linea = reader.readNext()) != null) {
+                if (linea.length == 6 && linea[2].equals(email)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {}
+        return false;
     }
     /**
      * Controlla se esiste un utente con certo username
@@ -244,11 +250,14 @@ public class Register implements ActionListener {
      * @return true se esiste false altrimenti
      */
     private boolean usernameEsistente(String username) {
-        for(int i=0;i<listaUtenti.size();i++){
-            if(listaUtenti.get(i).getUsername().equals(username)){
-                return true;
+        try (CSVReader reader = new CSVReader(new FileReader(pathToRegisterFile()))) {
+            String[] linea;
+            while ((linea = reader.readNext()) != null) {
+                if (linea.length == 6 && linea[4].equals(username)) {
+                    return true;
+                }
             }
-        }
+        } catch (Exception e) {}
         return false;
     }
     /**
@@ -354,11 +363,14 @@ public class Register implements ActionListener {
      * @return true se c'è un duplicato false altrimenti.
      */
     private boolean cfEsistente(String cf) {
-        for(int i=0;i<listaUtenti.size();i++){
-            if(listaUtenti.get(i).getCF().equals(cf)){
-                return true;
+        try (CSVReader reader = new CSVReader(new FileReader(pathToRegisterFile()))) {
+            String[] linea;
+            while ((linea = reader.readNext()) != null) {
+                if (linea.length == 6 && linea[3].toLowerCase().equals(cf.toLowerCase())) {
+                    return true;
+                }
             }
-        }
+        } catch (Exception e) {}
         return false;
     }
 

@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import java.io.Serializable;
 public class Utente implements Serializable {

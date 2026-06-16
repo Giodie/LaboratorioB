@@ -1,1 +1,3 @@
-java -cp "BookRecommender.jar;lib/*" client.BookRecommender
+
+java -cp ".;lib/*;bin" client.BookRecommender
+pause

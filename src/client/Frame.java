@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import javax.swing.*;
 import java.awt.*;
@@ -42,5 +41,15 @@ public class Frame {
         frame.add(scrollPane, BorderLayout.CENTER);
 
         frame.setVisible(true);
+    }
+    /**
+     * Metodo che restituisce il path del file csv sui libri.
+     * @return il path del file csv.
+     */
+    String getCSVfilePath(){
+        FileFinder fileFinder = new FileFinder();
+        String str = String.valueOf(fileFinder.LibrifilePath());
+
+        return str;
     }
 }

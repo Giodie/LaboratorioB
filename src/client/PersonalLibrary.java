@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -97,7 +96,7 @@ public class PersonalLibrary implements ActionListener {
 
         Library.add(splitPaneVerticale, BorderLayout.CENTER);
 
-        loadLibrerie();
+        loadLibrariesFromCSV();
 
         
         JPopupMenu popupMenu = new JPopupMenu();
@@ -112,7 +111,7 @@ public class PersonalLibrary implements ActionListener {
     /**
      * Carica le librerie da file.
      */
-    private void loadLibrerie() {
+    private void loadLibrariesFromCSV() {
         resetLibrariesView();
         libreries = proxy.getLibrerieUtente(utente);
         for(int i=0; i<libreries.size(); i++) {
@@ -132,27 +131,12 @@ public class PersonalLibrary implements ActionListener {
                 }
             }
     }
-    /**
-     * Ripristina la visualizzazione delle librerie.
-     * Rimuove tutte le librerie dalla GUI e svuota le strutture dati
-     * utilizzate per la loro gestione.
-     */
-
     private void resetLibrariesView() {
     tablePanel.removeAll();      
     tablePanel.revalidate();     
     tablePanel.repaint();        
     libraryTables.clear();       
     }
-    /**
-     * Gestisce gli eventi generati dai componenti grafici.
-     * In particolare consente la creazione di una nuova libreria
-     * verificando che il nome non sia vuoto e che non esistano
-     * duplicati per lo stesso utente.
-     *
-     * @param e evento generato dall'interazione dell'utente
-     */
-
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == newLibrary) {
@@ -160,7 +144,7 @@ public class PersonalLibrary implements ActionListener {
             if (!libraryName.isEmpty()) {
                 if(!proxy.esisteLibreriaUtente(utente, libraryName)){
                     proxy.aggiungiLibreria(new Librerie(libraryName,utente));
-                    loadLibrerie();
+                    loadLibrariesFromCSV();
                 }else{
                    JOptionPane.showMessageDialog(Library, "Hai già una libreria con questo nome"); 
                 }
@@ -291,6 +275,7 @@ public class PersonalLibrary implements ActionListener {
             return;
         }
 
+        // Conferma rimozione
         int confirm = JOptionPane.showConfirmDialog(Library,
                 "Vuoi davvero eliminare la libreria '" + libraryName + "'?",
                 "Conferma",
@@ -305,6 +290,7 @@ public class PersonalLibrary implements ActionListener {
         }
         libreries.removeIf(l -> l.getUtente().getUsername().equals(utente.getUsername()) && l.getNome().equals(finalLibraryName));
 
+        // 3. Rimuovo il pannello grafico corrispondente
         tablePanel.remove(index);
         libraryTables.remove(index);
         selectedLibraryTable = null;
@@ -372,32 +358,14 @@ public class PersonalLibrary implements ActionListener {
             this.table = table;
         }
     }
-    /**
-     * Restituisce il nome del libro selezionato.
-     *
-     * @return nome del libro
-     */
-
     private String nameFinder(){
 
         return bookName;
     }
-    /**
-     * Restituisce l'autore del libro selezionato.
-     *
-     * @return autore del libro
-     */
-
     private String authorFinder(){
 
         return author;
     }
-    /**
-     * Restituisce l'anno di pubblicazione del libro selezionato.
-     *
-     * @return anno di pubblicazione del libro
-     */
-
     private String yearFinder(){
         return year;
 

@@ -1,11 +1,10 @@
-//Giodi Carolo 758379
 package client;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
+import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 
 public class BookINFO {
 
@@ -62,6 +61,7 @@ public class BookINFO {
         topPanel.add(headerLabel, BorderLayout.WEST);
         frame.add(topPanel, BorderLayout.NORTH);
 
+      
         utentiModel = new DefaultListModel<>();
         utentiList = new JList<>(utentiModel);
         utentiList.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -109,6 +109,8 @@ public class BookINFO {
         medieTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 13));
         medieTable.getTableHeader().setBackground(lilla);
         medieTable.getTableHeader().setForeground(Color.WHITE);
+
+        // zebra rows
         medieTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -142,6 +144,7 @@ public class BookINFO {
 
         libro = new Libro(bookName, author, Integer.parseInt(year));
 
+        loadValutazioni();
 
         utenti = getUtentiPerLibro(libro);
         utentiModel.clear();
@@ -177,11 +180,38 @@ public class BookINFO {
     }
 
 
+
+    /**
+     * Carica la lista delle varie valutazioni da un file di test contenente tale lista.
+     * 
+     */
+    private void loadValutazioni() {
+        File file = new File(pathToValutazioni());
+        valutazioni = new ArrayList<>();
+
+        if (!file.exists() || file.length() == 0) return;
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            valutazioni = (ArrayList<ValutazioniLibro>) ois.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /**
+     * Metodo utilizzato per conoscere il path del file sulle valutazioni
+     * 
+     * @return La stringa contenente il path del file sulle valutazioni. 
+     * */
+    private String pathToValutazioni() {
+        FileFinder fileFinder = new FileFinder();
+        return String.valueOf(fileFinder.valutazioniPathDati());
+    }
+
     /**
      * Metodo che restituisce una lista di tutte le valutazioni di un certo libro
      * 
      * @param libro il libro di cui si vuole sapere tutte le valutazioni
-     * @return l'ArrayList contente tutte le valutazioni di un certo libro.
+     * @return l'ArrayList contiene tutte le valutazioni di un certo libro.
      */
     private ArrayList<ValutazioniLibro> getValutazioniPerLibro(Libro libro) {
         ArrayList<ValutazioniLibro> list = new ArrayList<>();
@@ -229,8 +259,7 @@ public class BookINFO {
      * @param model     il TableModel su cui si vuole fare apparire le varie medie.
      */
     private void calcolaMediePerLibro(Libro libro, DefaultTableModel model) {
-        ArrayList<Double> valori = proxy.getMediaValutazione(libro);
-        System.out.println("DEBUG MEDIE: " + valori);
+        ArrayList<Integer> valori = proxy.getMediaValutazione(libro);
 
         model.setRowCount(0);
         model.addRow(new Object[]{"Stile", valori.get(0)});
@@ -270,51 +299,45 @@ public class BookINFO {
         info.setEditable(false);
         StringBuilder sb = new StringBuilder();
 
-        ValutazioniLibro valutazione = proxy.getValutazioniLibro(u, libro);
         sb.append("Valutazioni:\n");
-        if (valutazione != null) {
-            sb.append("Stile: ").append(valutazione.getStile()).append("\n");
-            sb.append("Contenuto: ").append(valutazione.getContenuto()).append("\n");
-            sb.append("Gradevolezza: ").append(valutazione.getGradevolezza()).append("\n");
-            sb.append("Originalità: ").append(valutazione.getOriginalita()).append("\n");
-            sb.append("Edizione: ").append(valutazione.getEdizione()).append("\n");
-            sb.append("Voto Finale: ").append(valutazione.getMediaFinale()).append("\n\n");
+        ValutazioniLibro v = proxy.getValutazioniLibro(u,libro);
+        if (v != null) {
+            sb.append("Stile: ").append(v.getStile()).append("\n");
+            sb.append("Contenuto: ").append(v.getContenuto()).append("\n");
+            sb.append("Gradevolezza: ").append(v.getGradevolezza()).append("\n");
+            sb.append("Originalità: ").append(v.getOriginalita()).append("\n");
+            sb.append("Edizione: ").append(v.getEdizione()).append("\n");
+            sb.append("Voto Finale: ").append(v.getMediaFinale()).append("\n\n");
         }
 
-        SuggerimentiLibro suggerimento = proxy.getSuggerimentiLibro(u, libro);
+        
         sb.append("Libri suggeriti:\n");
-        if (suggerimento != null) {
-            for (Libro l : suggerimento.getALLibri()) {
-                sb.append("- ").append(l.getTitolo()).append("\n");
-            }
+        SuggerimentiLibro suggerimenti = proxy.getSuggerimentiLibro(u,libro);
+        if (suggerimenti != null ){
+            for (int i = 0 ; i<suggerimenti.getALLibri().size(); i++) {
+                sb.append("-").append(suggerimenti.getALLibri().get(i).getTitolo()).append("\n");
+            }   
         }
+        
 
         info.setText(sb.toString());
         dialog.add(new JScrollPane(info));
         dialog.setVisible(true);
     }
-    /**
-     * Restituisce una descrizione testuale dell'utente in base alle
-     * interazioni effettuate sul libro (valutazioni e/o suggerimenti).
-     *
-     * @param u l'utente di cui creare la descrizione
-     * @return stringa descrittiva dell'utente
-     */
     private String descrizioneUtente(Utente u) {
         boolean haValutato = false;
         boolean haSuggerito = false;
 
-        // Proxy per l'utente specifico
-        ValutazioniLibro valutazione = proxy.getValutazioniLibro(u, libro);
-        if (valutazione != null) {
-            haValutato = true;
+        for (ValutazioniLibro v : valutazioni) {
+            if (v.getUtente().getUsername().equals(u.getUsername()) &&
+                    v.getLibro().getTitolo().equals(libro.getTitolo())) {
+                haValutato = true;
+                break;
+            }
         }
 
-        SuggerimentiLibro suggerimento = proxy.getSuggerimentiLibro(u, libro);
-        if (suggerimento != null && !suggerimento.getALLibri().isEmpty()) {
-            haSuggerito = true;
-        }
-
+        CsvTable csv = new CsvTable();
+        //inserire chi ha suggerito il libro
         if (haValutato && haSuggerito)
             return u.getUsername() + " ha valutato questo libro e ne ha suggeriti altri";
         if (haValutato)
@@ -324,8 +347,22 @@ public class BookINFO {
 
         return u.getUsername();
     }
-
-
+    /**
+     * Metodo per caricare la lista contenuta sul file dei suggerimenti
+     * 
+     * @return l'ArrayList di tutti i suggerimenti di tutti i libri
+     */
+    
+    /**
+     * Metodo per sapere qual è il path per il file sui suggerimenti.
+     * 
+     * @return una stringa contente il path.
+     */
+    private String pathToSuggerimenti(){
+        FileFinder fileFinder = new FileFinder();
+        String str = String.valueOf(fileFinder.suggerimentiPathDati());
+        return str;
+    }
 
     /**
      * metodo per aggiungere delle stelle vicino alla media del voto finale.

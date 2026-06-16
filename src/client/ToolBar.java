@@ -1,4 +1,3 @@
-//Giodi Carolo 758379
 package client;
 import com.opencsv.exceptions.CsvValidationException;
 

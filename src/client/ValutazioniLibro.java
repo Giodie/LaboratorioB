@@ -1,5 +1,4 @@
-
-//Giodi Carolo 758379package client;
+package client;
 import java.io.Serializable;
 
 public class ValutazioniLibro implements Serializable{
